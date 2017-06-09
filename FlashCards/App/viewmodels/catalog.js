@@ -1,22 +1,22 @@
-﻿define(['durandal/system'], function (system) {
-
+﻿define(['durandal/system', 'services/flashCardService','plugins/router'], function (system, service,router) {
     var vm = {};
-
- 
+    vm.catalogNames = [];
     vm.activate = function () {
-        //system.log("**  activate catalog");
+        system.log("** activate catalog");
+        return service.catalogNames()
+            .done(function (data) {
+            vm.catalogNames = data;
+        });
+    };
 
-        return system.defer(function (def) {
-            setTimeout(function () {
-                system.log("**  activate catalog");
-                def.resolve();
-            }, 2000);
-        })
-    }
-    vm.attached = function () {
-        system.log("**  attached catalog");
-    }
-     
+    //vm.attached = function () {
+    //    system.log("**  attached catalog");
+    //};
+
+    vm.goToCards = function (name) {
+        system.log("Go to " + name);
+        router.navigate("#cards/" + encodeURIComponent(name));
+    };
 
     return vm;
-})
+});

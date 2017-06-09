@@ -1,3 +1,10 @@
-﻿<div>
-    Name goes here
-</div>
+﻿<section>
+    <br />
+    <br />
+    <br />
+    <ul data-bind="foreach: catalogNames">
+        <li data-bind="click:$parent.goToCards">
+            <h3 data-bind="text: $data" ></h3>
+        </li>
+    </ul> 
+</section>

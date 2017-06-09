@@ -9,36 +9,27 @@
  * @requires require
  * @requires jquery
  */
-define(['require', 'jquery'], function(require, $) {
-    var isDebugging = false,
-        nativeKeys = Object.keys,
-        hasOwnProperty = Object.prototype.hasOwnProperty,
-        toString = Object.prototype.toString,
-        system,
-        treatAsIE8 = false,
-        nativeIsArray = Array.isArray,
-        slice = Array.prototype.slice;
-
+define(['require', 'jquery'], function (require, $) {
+    var isDebugging = false, nativeKeys = Object.keys, hasOwnProperty = Object.prototype.hasOwnProperty, toString = Object.prototype.toString, system, treatAsIE8 = false, nativeIsArray = Array.isArray, slice = Array.prototype.slice;
     //polyfill from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/Trim
     if (!String.prototype.trim) {
         String.prototype.trim = function () {
             return this.replace(/^\s+|\s+$/g, '');
         };
     }
-
     //see http://patik.com/blog/complete-cross-browser-console-log/
     // Tell IE9 to use its built-in console
     if (Function.prototype.bind && (typeof console === 'object' || typeof console === 'function') && typeof console.log == 'object') {
         try {
             ['log', 'info', 'warn', 'error', 'assert', 'dir', 'clear', 'profile', 'profileEnd']
-                .forEach(function(method) {
-                    console[method] = this.call(console[method], console);
-                }, Function.prototype.bind);
-        } catch (ex) {
+                .forEach(function (method) {
+                console[method] = this.call(console[method], console);
+            }, Function.prototype.bind);
+        }
+        catch (ex) {
             treatAsIE8 = true;
         }
     }
-
     // callback for dojo's loader
     // note: if you wish to use Durandal with dojo's AMD loader,
     // currently you must fork the dojo source with the following
@@ -47,23 +38,19 @@ define(['require', 'jquery'], function(require, $) {
     // an enhancement request has been submitted to dojo to make this
     // a permanent change. To view the status of this request, visit:
     // http://bugs.dojotoolkit.org/ticket/16727
-
     if (require.on) {
-        require.on("moduleLoaded", function(module, mid) {
+        require.on("moduleLoaded", function (module, mid) {
             system.setModuleId(module, mid);
         });
     }
-
     // callback for require.js loader
     if (typeof requirejs !== 'undefined') {
-        requirejs.onResourceLoad = function(context, map, depArray) {
+        requirejs.onResourceLoad = function (context, map, depArray) {
             system.setModuleId(context.defined[map.id], map.id);
         };
     }
-
-    var noop = function() { };
-
-    var log = function() {
+    var noop = function () { };
+    var log = function () {
         try {
             // Modern browsers
             if (typeof console != 'undefined' && typeof console.log == 'function') {
@@ -75,49 +62,41 @@ define(['require', 'jquery'], function(require, $) {
                         i++;
                     }
                 }
-                // All other modern browsers
                 else if ((slice.call(arguments)).length == 1 && typeof slice.call(arguments)[0] == 'string') {
                     console.log((slice.call(arguments)).toString());
-                } else {
+                }
+                else {
                     console.log.apply(console, slice.call(arguments));
                 }
             }
-            // IE8
             else if ((!Function.prototype.bind || treatAsIE8) && typeof console != 'undefined' && typeof console.log == 'object') {
                 Function.prototype.call.call(console.log, console, slice.call(arguments));
             }
-
-            // IE7 and lower, and other old browsers
-        } catch (ignore) { }
+        }
+        catch (ignore) { }
     };
-
-    var logError = function(error, err) {
+    var logError = function (error, err) {
         var exception;
-
-        if(error instanceof Error){
+        if (error instanceof Error) {
             exception = error;
-        } else {
+        }
+        else {
             exception = new Error(error);
         }
-
         exception.innerError = err;
-
         //Report the error as an error, not as a log
         try {
             // Modern browsers (it's only a single item, no need for argument splitting as in log() above)
             if (typeof console != 'undefined' && typeof console.error == 'function') {
                 console.error(exception);
             }
-            // IE8
             else if ((!Function.prototype.bind || treatAsIE8) && typeof console != 'undefined' && typeof console.error == 'object') {
                 Function.prototype.call.call(console.error, console, exception);
             }
-            // IE7 and lower, and other old browsers
-        } catch (ignore) { }
-
+        }
+        catch (ignore) { }
         throw exception;
     };
-
     /**
      * @class SystemModule
      * @static
@@ -139,19 +118,16 @@ define(['require', 'jquery'], function(require, $) {
          * @param {object} obj The object whose module id you wish to determine.
          * @return {string} The module id.
          */
-        getModuleId: function(obj) {
+        getModuleId: function (obj) {
             if (!obj) {
                 return null;
             }
-
             if (typeof obj == 'function' && obj.prototype) {
                 return obj.prototype.__moduleId__;
             }
-
             if (typeof obj == 'string') {
                 return null;
             }
-
             return obj.__moduleId__;
         },
         /**
@@ -160,20 +136,17 @@ define(['require', 'jquery'], function(require, $) {
          * @param {object} obj The object whose module id you wish to set.
          * @param {string} id The id to set for the specified object.
          */
-        setModuleId: function(obj, id) {
+        setModuleId: function (obj, id) {
             if (!obj) {
                 return;
             }
-
             if (typeof obj == 'function' && obj.prototype) {
                 obj.prototype.__moduleId__ = id;
                 return;
             }
-
             if (typeof obj == 'string') {
                 return;
             }
-
             obj.__moduleId__ = id;
         },
         /**
@@ -182,10 +155,11 @@ define(['require', 'jquery'], function(require, $) {
          * @param {object} module The module to use to get/create the default object for.
          * @return {object} The default object for the module.
          */
-        resolveObject: function(module) {
+        resolveObject: function (module) {
             if (system.isFunction(module)) {
                 return new module();
-            } else {
+            }
+            else {
                 return module;
             }
         },
@@ -195,20 +169,20 @@ define(['require', 'jquery'], function(require, $) {
          * @param {boolean} [enable] Turns on/off debugging.
          * @return {boolean} Whether or not Durandal is current debugging.
          */
-        debug: function(enable) {
+        debug: function (enable) {
             if (arguments.length == 1) {
                 isDebugging = enable;
                 if (isDebugging) {
                     this.log = log;
                     this.error = logError;
                     this.log('Debug:Enabled');
-                } else {
+                }
+                else {
                     this.log('Debug:Disabled');
                     this.log = noop;
                     this.error = noop;
                 }
             }
-
             return isDebugging;
         },
         /**
@@ -240,7 +214,7 @@ define(['require', 'jquery'], function(require, $) {
          * @param {function} [action] The action to defer. You will be passed the deferred object as a paramter.
          * @return {Deferred} The deferred object.
          */
-        defer: function(action) {
+        defer: function (action) {
             return $.Deferred(action);
         },
         /**
@@ -248,11 +222,11 @@ define(['require', 'jquery'], function(require, $) {
          * @method guid
          * @return {string} The guid.
          */
-        guid: function() {
+        guid: function () {
             var d = new Date().getTime();
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
                 var r = (d + Math.random() * 16) % 16 | 0;
-                d = Math.floor(d/16);
+                d = Math.floor(d / 16);
                 return (c == 'x' ? r : (r & 0x7 | 0x8)).toString(16);
             });
         },
@@ -262,29 +236,27 @@ define(['require', 'jquery'], function(require, $) {
          * @param {string|string[]} moduleId The id(s) of the modules to load.
          * @return {Promise} A promise for the loaded module(s).
          */
-        acquire: function() {
-            var modules,
-                first = arguments[0],
-                arrayRequest = false;
-
-            if(system.isArray(first)){
+        acquire: function () {
+            var modules, first = arguments[0], arrayRequest = false;
+            if (system.isArray(first)) {
                 modules = first;
                 arrayRequest = true;
-            }else{
+            }
+            else {
                 modules = slice.call(arguments, 0);
             }
-
-            return this.defer(function(dfd) {
-                require(modules, function() {
+            return this.defer(function (dfd) {
+                require(modules, function () {
                     var args = arguments;
-                    setTimeout(function() {
-                        if(args.length > 1 || arrayRequest){
+                    setTimeout(function () {
+                        if (args.length > 1 || arrayRequest) {
                             dfd.resolve(slice.call(args, 0));
-                        }else{
+                        }
+                        else {
                             dfd.resolve(args[0]);
                         }
                     }, 1);
-                }, function(err){
+                }, function (err) {
                     dfd.reject(err);
                 });
             }).promise();
@@ -295,19 +267,16 @@ define(['require', 'jquery'], function(require, $) {
          * @param {object} obj The target object to extend.
          * @param {object} extension* Uses to extend the target object.
          */
-        extend: function(obj) {
+        extend: function (obj) {
             var rest = slice.call(arguments, 1);
-
             for (var i = 0; i < rest.length; i++) {
                 var source = rest[i];
-
                 if (source) {
                     for (var prop in source) {
                         obj[prop] = source[prop];
                     }
                 }
             }
-
             return obj;
         },
         /**
@@ -316,140 +285,123 @@ define(['require', 'jquery'], function(require, $) {
          * @param {number} milliseconds The number of milliseconds to wait.
          * @return {Promise}
          */
-        wait: function(milliseconds) {
-            return system.defer(function(dfd) {
+        wait: function (milliseconds) {
+            return system.defer(function (dfd) {
                 setTimeout(dfd.resolve, milliseconds);
             }).promise();
         }
     };
-
     /**
      * Gets all the owned keys of the specified object.
      * @method keys
      * @param {object} object The object whose owned keys should be returned.
      * @return {string[]} The keys.
      */
-    system.keys = nativeKeys || function(obj) {
+    system.keys = nativeKeys || function (obj) {
         if (obj !== Object(obj)) {
             throw new TypeError('Invalid object');
         }
-
         var keys = [];
-
         for (var key in obj) {
             if (hasOwnProperty.call(obj, key)) {
                 keys[keys.length] = key;
             }
         }
-
         return keys;
     };
-
     /**
      * Determines if the specified object is an html element.
      * @method isElement
      * @param {object} object The object to check.
      * @return {boolean} True if matches the type, false otherwise.
      */
-    system.isElement = function(obj) {
+    system.isElement = function (obj) {
         return !!(obj && obj.nodeType === 1);
     };
-
     /**
      * Determines if the specified object is an array.
      * @method isArray
      * @param {object} object The object to check.
      * @return {boolean} True if matches the type, false otherwise.
      */
-    system.isArray = nativeIsArray || function(obj) {
+    system.isArray = nativeIsArray || function (obj) {
         return toString.call(obj) == '[object Array]';
     };
-
     /**
      * Determines if the specified object is...an object. ie. Not an array, string, etc.
      * @method isObject
      * @param {object} object The object to check.
      * @return {boolean} True if matches the type, false otherwise.
      */
-    system.isObject = function(obj) {
+    system.isObject = function (obj) {
         return obj === Object(obj);
     };
-
     /**
      * Determines if the specified object is a boolean.
      * @method isBoolean
      * @param {object} object The object to check.
      * @return {boolean} True if matches the type, false otherwise.
      */
-    system.isBoolean = function(obj) {
-        return typeof(obj) === "boolean";
+    system.isBoolean = function (obj) {
+        return typeof (obj) === "boolean";
     };
-
     /**
      * Determines if the specified object is a promise.
      * @method isPromise
      * @param {object} object The object to check.
      * @return {boolean} True if matches the type, false otherwise.
      */
-    system.isPromise = function(obj) {
+    system.isPromise = function (obj) {
         return obj && system.isFunction(obj.then);
     };
-
     /**
      * Determines if the specified object is a function arguments object.
      * @method isArguments
      * @param {object} object The object to check.
      * @return {boolean} True if matches the type, false otherwise.
      */
-
     /**
      * Determines if the specified object is a function.
      * @method isFunction
      * @param {object} object The object to check.
      * @return {boolean} True if matches the type, false otherwise.
      */
-
     /**
      * Determines if the specified object is a string.
      * @method isString
      * @param {object} object The object to check.
      * @return {boolean} True if matches the type, false otherwise.
      */
-
     /**
      * Determines if the specified object is a number.
      * @method isNumber
      * @param {object} object The object to check.
      * @return {boolean} True if matches the type, false otherwise.
      */
-
     /**
      * Determines if the specified object is a date.
      * @method isDate
      * @param {object} object The object to check.
      * @return {boolean} True if matches the type, false otherwise.
      */
-
     /**
      * Determines if the specified object is a boolean.
      * @method isBoolean
      * @param {object} object The object to check.
      * @return {boolean} True if matches the type, false otherwise.
      */
-
     //isArguments, isFunction, isString, isNumber, isDate, isRegExp.
     var isChecks = ['Arguments', 'Function', 'String', 'Number', 'Date', 'RegExp'];
-
     function makeIsFunction(name) {
         var value = '[object ' + name + ']';
-        system['is' + name] = function(obj) {
+        system['is' + name] = function (obj) {
             return toString.call(obj) == value;
         };
     }
-
     for (var i = 0; i < isChecks.length; i++) {
         makeIsFunction(isChecks[i]);
     }
-
     return system;
 });
+//# sourceMappingURL=system.js.map 
+//# sourceMappingURL=system.js.map

@@ -19,11 +19,9 @@ define(['durandal/system', 'durandal/viewEngine'], function (system, viewEngine)
             }
         }
     }
-    
     function escape(str) {
         return (str + '').replace(/([\\\.\+\*\?\[\^\]\$\(\)\{\}\=\!\<\>\|\:])/g, "\\$1");
     }
-
     /**
      * @class ViewLocatorModule
      * @static
@@ -36,22 +34,18 @@ define(['durandal/system', 'durandal/viewEngine'], function (system, viewEngine)
          * @param {string} [viewsPath] The replacement for the modulesPath. If not specified, the replacement is 'views'.
          * @param {string} [areasPath] Partial views are mapped to the "views" folder if not specified. Use this parameter to change their location.
          */
-        useConvention: function(modulesPath, viewsPath, areasPath) {
+        useConvention: function (modulesPath, viewsPath, areasPath) {
             modulesPath = modulesPath || 'viewmodels';
             viewsPath = viewsPath || 'views';
             areasPath = areasPath || viewsPath;
-
             var reg = new RegExp(escape(modulesPath), 'gi');
-
             this.convertModuleIdToViewId = function (moduleId) {
                 return moduleId.replace(reg, viewsPath);
             };
-
             this.translateViewIdToArea = function (viewId, area) {
                 if (!area || area == 'partial') {
                     return areasPath + '/' + viewId;
                 }
-                
                 return areasPath + '/' + area + '/' + viewId;
             };
         },
@@ -63,25 +57,21 @@ define(['durandal/system', 'durandal/viewEngine'], function (system, viewEngine)
          * @param {DOMElement[]} [elementsToSearch] An existing set of elements to search first.
          * @return {Promise} A promise of the view.
          */
-        locateViewForObject: function(obj, area, elementsToSearch) {
+        locateViewForObject: function (obj, area, elementsToSearch) {
             var view;
-
             if (obj.getView) {
                 view = obj.getView();
                 if (view) {
                     return this.locateView(view, area, elementsToSearch);
                 }
             }
-
             if (obj.viewUrl) {
                 return this.locateView(obj.viewUrl, area, elementsToSearch);
             }
-
             var id = system.getModuleId(obj);
             if (id) {
                 return this.locateView(this.convertModuleIdToViewId(id), area, elementsToSearch);
             }
-
             return this.locateView(this.determineFallbackViewId(obj), area, elementsToSearch);
         },
         /**
@@ -90,7 +80,7 @@ define(['durandal/system', 'durandal/viewEngine'], function (system, viewEngine)
          * @param {string} moduleId The module id.
          * @return {string} The view id.
          */
-        convertModuleIdToViewId: function(moduleId) {
+        convertModuleIdToViewId: function (moduleId) {
             return moduleId;
         },
         /**
@@ -124,35 +114,33 @@ define(['durandal/system', 'durandal/viewEngine'], function (system, viewEngine)
          * @param {DOMElement[]} [elementsToSearch] An existing set of elements to search first.
          * @return {Promise} A promise of the view.
          */
-        locateView: function(viewOrUrlOrId, area, elementsToSearch) {
+        locateView: function (viewOrUrlOrId, area, elementsToSearch) {
             if (typeof viewOrUrlOrId === 'string') {
                 var viewId;
-
                 if (viewEngine.isViewUrl(viewOrUrlOrId)) {
                     viewId = viewEngine.convertViewUrlToViewId(viewOrUrlOrId);
-                } else {
+                }
+                else {
                     viewId = viewOrUrlOrId;
                 }
-
                 if (area) {
                     viewId = this.translateViewIdToArea(viewId, area);
                 }
-
                 if (elementsToSearch) {
                     var existing = findInElements(elementsToSearch, viewId);
                     if (existing) {
-                        return system.defer(function(dfd) {
+                        return system.defer(function (dfd) {
                             dfd.resolve(existing);
                         }).promise();
                     }
                 }
-
                 return viewEngine.createView(viewId);
             }
-
-            return system.defer(function(dfd) {
+            return system.defer(function (dfd) {
                 dfd.resolve(viewOrUrlOrId);
             }).promise();
         }
     };
 });
+//# sourceMappingURL=viewLocator.js.map 
+//# sourceMappingURL=viewLocator.js.map

@@ -15,138 +15,120 @@
 define(['durandal/system', 'knockout'], function (system, ko) {
     var activator;
     var defaultOptions = {
-        canDeactivate:true
+        canDeactivate: true
     };
-
     function ensureSettings(settings) {
         if (settings == undefined) {
             settings = {};
         }
-
         if (!system.isBoolean(settings.closeOnDeactivate)) {
             settings.closeOnDeactivate = activator.defaults.closeOnDeactivate;
         }
-
         if (!settings.beforeActivate) {
             settings.beforeActivate = activator.defaults.beforeActivate;
         }
-
         if (!settings.afterDeactivate) {
             settings.afterDeactivate = activator.defaults.afterDeactivate;
         }
-
-        if(!settings.affirmations){
+        if (!settings.affirmations) {
             settings.affirmations = activator.defaults.affirmations;
         }
-
         if (!settings.interpretResponse) {
             settings.interpretResponse = activator.defaults.interpretResponse;
         }
-
         if (!settings.areSameItem) {
             settings.areSameItem = activator.defaults.areSameItem;
         }
-
         if (!settings.findChildActivator) {
             settings.findChildActivator = activator.defaults.findChildActivator;
         }
-
         return settings;
     }
-
     function invoke(target, method, data) {
         if (system.isArray(data)) {
             return target[method].apply(target, data);
         }
-
         return target[method](data);
     }
-
     function deactivate(item, close, settings, dfd, setter) {
         if (item && item.deactivate) {
             system.log('Deactivating', item);
-
             var result;
             try {
                 result = item.deactivate(close);
-            } catch(error) {
+            }
+            catch (error) {
                 system.log('ERROR: ' + error.message, error);
                 dfd.resolve(false);
                 return;
             }
-
             if (result && result.then) {
-                result.then(function() {
+                result.then(function () {
                     settings.afterDeactivate(item, close, setter);
                     dfd.resolve(true);
-                }, function(reason) {
+                }, function (reason) {
                     if (reason) {
                         system.log(reason);
                     }
-
                     dfd.resolve(false);
                 });
-            } else {
+            }
+            else {
                 settings.afterDeactivate(item, close, setter);
                 dfd.resolve(true);
             }
-        } else {
+        }
+        else {
             if (item) {
                 settings.afterDeactivate(item, close, setter);
             }
-
             dfd.resolve(true);
         }
     }
-
     function activate(newItem, activeItem, callback, activationData) {
         var result;
-
-        if(newItem && newItem.activate) {
+        if (newItem && newItem.activate) {
             system.log('Activating', newItem);
-
             try {
                 result = invoke(newItem, 'activate', activationData);
-            } catch (error) {
+            }
+            catch (error) {
                 system.log('ERROR: ' + error.message, error);
                 callback(false);
                 return;
             }
         }
-
-        if(result && result.then) {
-            result.then(function() {
+        if (result && result.then) {
+            result.then(function () {
                 activeItem(newItem);
                 callback(true);
             }, function (reason) {
                 if (reason) {
                     system.log('ERROR: ' + reason.message, reason);
                 }
-
                 callback(false);
             });
-        } else {
+        }
+        else {
             activeItem(newItem);
             callback(true);
         }
     }
-
     function canDeactivateItem(item, close, settings, options) {
         options = system.extend({}, defaultOptions, options);
         settings.lifecycleData = null;
-
         return system.defer(function (dfd) {
             function continueCanDeactivate() {
                 if (item && item.canDeactivate && options.canDeactivate) {
                     var resultOrPromise;
                     try {
                         resultOrPromise = item.canDeactivate(close);
-                    } catch (error) {
+                    }
+                    catch (error) {
                         system.log('ERROR: ' + error.message, error);
                         dfd.resolve(false);
                         return;
                     }
-
                     if (resultOrPromise.then) {
                         resultOrPromise.then(function (result) {
                             settings.lifecycleData = result;
@@ -155,73 +137,74 @@ define(['durandal/system', 'knockout'], function (system, ko) {
                             if (reason) {
                                 system.log('ERROR: ' + reason.message, reason);
                             }
-
                             dfd.resolve(false);
                         });
-                    } else {
+                    }
+                    else {
                         settings.lifecycleData = resultOrPromise;
                         dfd.resolve(settings.interpretResponse(resultOrPromise));
                     }
-                } else {
+                }
+                else {
                     dfd.resolve(true);
                 }
             }
-
             var childActivator = settings.findChildActivator(item);
             if (childActivator) {
-                childActivator.canDeactivate().then(function(result) {
+                childActivator.canDeactivate().then(function (result) {
                     if (result) {
                         continueCanDeactivate();
-                    } else {
+                    }
+                    else {
                         dfd.resolve(false);
                     }
                 });
-            } else {
+            }
+            else {
                 continueCanDeactivate();
             }
         }).promise();
-    };
-
+    }
+    ;
     function canActivateItem(newItem, activeItem, settings, activeData, newActivationData) {
         settings.lifecycleData = null;
-
         return system.defer(function (dfd) {
             if (settings.areSameItem(activeItem(), newItem, activeData, newActivationData)) {
                 dfd.resolve(true);
                 return;
             }
-
             if (newItem && newItem.canActivate) {
                 var resultOrPromise;
                 try {
                     resultOrPromise = invoke(newItem, 'canActivate', newActivationData);
-                } catch (error) {
+                }
+                catch (error) {
                     system.log('ERROR: ' + error.message, error);
                     dfd.resolve(false);
                     return;
                 }
-
                 if (resultOrPromise.then) {
-                    resultOrPromise.then(function(result) {
+                    resultOrPromise.then(function (result) {
                         settings.lifecycleData = result;
                         dfd.resolve(settings.interpretResponse(result));
-                    }, function(reason) {
+                    }, function (reason) {
                         if (reason) {
                             system.log('ERROR: ' + reason.message, reason);
                         }
-
                         dfd.resolve(false);
                     });
-                } else {
+                }
+                else {
                     settings.lifecycleData = resultOrPromise;
                     dfd.resolve(settings.interpretResponse(resultOrPromise));
                 }
-            } else {
+            }
+            else {
                 dfd.resolve(true);
             }
         }).promise();
-    };
-
+    }
+    ;
     /**
      * An activator is a read/write computed observable that enforces the activation lifecycle whenever changing values.
      * @class Activator
@@ -229,9 +212,7 @@ define(['durandal/system', 'knockout'], function (system, ko) {
     function createActivator(initialActiveItem, settings) {
         var activeItem = ko.observable(null);
         var activeData;
-
         settings = ensureSettings(settings);
-
         var computed = ko.computed({
             read: function () {
                 return activeItem();
@@ -241,27 +222,22 @@ define(['durandal/system', 'knockout'], function (system, ko) {
                 computed.activateItem(newValue);
             }
         });
-
         computed.__activator__ = true;
-
         /**
          * The settings for this activator.
          * @property {ActivatorSettings} settings
          */
         computed.settings = settings;
         settings.activator = computed;
-
         /**
          * An observable which indicates whether or not the activator is currently in the process of activating an instance.
          * @method isActivating
          * @return {boolean}
          */
         computed.isActivating = ko.observable(false);
-
         computed.forceActiveItem = function (item) {
             activeItem(item);
         };
-
         /**
          * Determines whether or not the specified item can be deactivated.
          * @method canDeactivateItem
@@ -273,7 +249,6 @@ define(['durandal/system', 'knockout'], function (system, ko) {
         computed.canDeactivateItem = function (item, close, options) {
             return canDeactivateItem(item, close, settings, options);
         };
-
         /**
          * Deactivates the specified item.
          * @method deactivateItem
@@ -282,18 +257,18 @@ define(['durandal/system', 'knockout'], function (system, ko) {
          * @return {promise}
          */
         computed.deactivateItem = function (item, close) {
-            return system.defer(function(dfd) {
-                computed.canDeactivateItem(item, close).then(function(canDeactivate) {
+            return system.defer(function (dfd) {
+                computed.canDeactivateItem(item, close).then(function (canDeactivate) {
                     if (canDeactivate) {
                         deactivate(item, close, settings, dfd, activeItem);
-                    } else {
+                    }
+                    else {
                         computed.notifySubscribers();
                         dfd.resolve(false);
                     }
                 });
             }).promise();
         };
-
         /**
          * Determines whether or not the specified item can be activated.
          * @method canActivateItem
@@ -304,7 +279,6 @@ define(['durandal/system', 'knockout'], function (system, ko) {
         computed.canActivateItem = function (newItem, activationData) {
             return canActivateItem(newItem, activeItem, settings, activeData, activationData);
         };
-
         /**
          * Activates the specified item.
          * @method activateItem
@@ -316,22 +290,18 @@ define(['durandal/system', 'knockout'], function (system, ko) {
         computed.activateItem = function (newItem, newActivationData, options) {
             var viaSetter = computed.viaSetter;
             computed.viaSetter = false;
-
             return system.defer(function (dfd) {
                 if (computed.isActivating()) {
                     dfd.resolve(false);
                     return;
                 }
-
                 computed.isActivating(true);
-
                 var currentItem = activeItem();
                 if (settings.areSameItem(currentItem, newItem, activeData, newActivationData)) {
                     computed.isActivating(false);
                     dfd.resolve(true);
                     return;
                 }
-
                 computed.canDeactivateItem(currentItem, settings.closeOnDeactivate, options).then(function (canDeactivate) {
                     if (canDeactivate) {
                         computed.canActivateItem(newItem, newActivationData).then(function (canActivate) {
@@ -339,34 +309,33 @@ define(['durandal/system', 'knockout'], function (system, ko) {
                                 system.defer(function (dfd2) {
                                     deactivate(currentItem, settings.closeOnDeactivate, settings, dfd2);
                                 }).promise().then(function () {
-                                        newItem = settings.beforeActivate(newItem, newActivationData);
-                                        activate(newItem, activeItem, function (result) {
-                                            activeData = newActivationData;
-                                            computed.isActivating(false);
-                                            dfd.resolve(result);
-                                        }, newActivationData);
-                                    });
-                            } else {
+                                    newItem = settings.beforeActivate(newItem, newActivationData);
+                                    activate(newItem, activeItem, function (result) {
+                                        activeData = newActivationData;
+                                        computed.isActivating(false);
+                                        dfd.resolve(result);
+                                    }, newActivationData);
+                                });
+                            }
+                            else {
                                 if (viaSetter) {
                                     computed.notifySubscribers();
                                 }
-
                                 computed.isActivating(false);
                                 dfd.resolve(false);
                             }
                         });
-                    } else {
+                    }
+                    else {
                         if (viaSetter) {
                             computed.notifySubscribers();
                         }
-
                         computed.isActivating(false);
                         dfd.resolve(false);
                     }
                 });
             }).promise();
         };
-
         /**
          * Determines whether or not the activator, in its current state, can be activated.
          * @method canActivate
@@ -374,17 +343,15 @@ define(['durandal/system', 'knockout'], function (system, ko) {
          */
         computed.canActivate = function () {
             var toCheck;
-
             if (initialActiveItem) {
                 toCheck = initialActiveItem;
                 initialActiveItem = false;
-            } else {
+            }
+            else {
                 toCheck = computed();
             }
-
             return computed.canActivateItem(toCheck);
         };
-
         /**
          * Activates the activator, in its current state.
          * @method activate
@@ -392,17 +359,15 @@ define(['durandal/system', 'knockout'], function (system, ko) {
          */
         computed.activate = function () {
             var toActivate;
-
             if (initialActiveItem) {
                 toActivate = initialActiveItem;
                 initialActiveItem = false;
-            } else {
+            }
+            else {
                 toActivate = computed();
             }
-
             return computed.activateItem(toActivate);
         };
-
         /**
          * Determines whether or not the activator, in its current state, can be deactivated.
          * @method canDeactivate
@@ -411,7 +376,6 @@ define(['durandal/system', 'knockout'], function (system, ko) {
         computed.canDeactivate = function (close) {
             return computed.canDeactivateItem(computed(), close);
         };
-
         /**
          * Deactivates the activator, in its current state.
          * @method deactivate
@@ -420,79 +384,65 @@ define(['durandal/system', 'knockout'], function (system, ko) {
         computed.deactivate = function (close) {
             return computed.deactivateItem(computed(), close);
         };
-
         computed.includeIn = function (includeIn) {
             includeIn.canActivate = function () {
                 return computed.canActivate();
             };
-
             includeIn.activate = function () {
                 return computed.activate();
             };
-
             includeIn.canDeactivate = function (close) {
                 return computed.canDeactivate(close);
             };
-
             includeIn.deactivate = function (close) {
                 return computed.deactivate(close);
             };
         };
-
         if (settings.includeIn) {
             computed.includeIn(settings.includeIn);
-        } else if (initialActiveItem) {
+        }
+        else if (initialActiveItem) {
             computed.activate();
         }
-
         computed.forItems = function (items) {
             settings.closeOnDeactivate = false;
-
             settings.determineNextItemToActivate = function (list, lastIndex) {
                 var toRemoveAt = lastIndex - 1;
-
                 if (toRemoveAt == -1 && list.length > 1) {
                     return list[1];
                 }
-
                 if (toRemoveAt > -1 && toRemoveAt < list.length - 1) {
                     return list[toRemoveAt];
                 }
-
                 return null;
             };
-
             settings.beforeActivate = function (newItem) {
                 var currentItem = computed();
-
                 if (!newItem) {
                     newItem = settings.determineNextItemToActivate(items, currentItem ? items.indexOf(currentItem) : 0);
-                } else {
+                }
+                else {
                     var index = items.indexOf(newItem);
-
                     if (index == -1) {
                         items.push(newItem);
-                    } else {
+                    }
+                    else {
                         newItem = items()[index];
                     }
                 }
-
                 return newItem;
             };
-
             settings.afterDeactivate = function (oldItem, close) {
                 if (close) {
                     items.remove(oldItem);
                 }
             };
-
             var originalCanDeactivate = computed.canDeactivate;
             computed.canDeactivate = function (close) {
                 if (close) {
                     return system.defer(function (dfd) {
                         var list = items();
                         var results = [];
-
                         function finish() {
                             for (var j = 0; j < results.length; j++) {
                                 if (!results[j]) {
@@ -500,10 +450,8 @@ define(['durandal/system', 'knockout'], function (system, ko) {
                                     return;
                                 }
                             }
-
                             dfd.resolve(true);
                         }
-
                         for (var i = 0; i < list.length; i++) {
                             computed.canDeactivateItem(list[i], close).then(function (result) {
                                 results.push(result);
@@ -513,11 +461,11 @@ define(['durandal/system', 'knockout'], function (system, ko) {
                             });
                         }
                     }).promise();
-                } else {
+                }
+                else {
                     return originalCanDeactivate();
                 }
             };
-
             var originalDeactivate = computed.deactivate;
             computed.deactivate = function (close) {
                 if (close) {
@@ -525,7 +473,6 @@ define(['durandal/system', 'knockout'], function (system, ko) {
                         var list = items();
                         var results = 0;
                         var listLength = list.length;
-
                         function doDeactivate(item) {
                             setTimeout(function () {
                                 computed.deactivateItem(item, close).then(function () {
@@ -537,22 +484,19 @@ define(['durandal/system', 'knockout'], function (system, ko) {
                                 });
                             }, 1);
                         }
-
                         for (var i = 0; i < listLength; i++) {
                             doDeactivate(list[i]);
                         }
                     }).promise();
-                } else {
+                }
+                else {
                     return originalDeactivate();
                 }
             };
-
             return computed;
         };
-
         return computed;
     }
-
     /**
      * @class ActivatorSettings
      * @static
@@ -576,15 +520,13 @@ define(['durandal/system', 'knockout'], function (system, ko) {
          * @param {object} value
          * @return {boolean}
          */
-        interpretResponse: function(value) {
-            if(system.isObject(value)) {
+        interpretResponse: function (value) {
+            if (system.isObject(value)) {
                 value = value.can || false;
             }
-
-            if(system.isString(value)) {
+            if (system.isString(value)) {
                 return ko.utils.arrayIndexOf(this.affirmations, value.toLowerCase()) !== -1;
             }
-
             return value;
         },
         /**
@@ -596,7 +538,7 @@ define(['durandal/system', 'knockout'], function (system, ko) {
          * @param {object} newActivationData
          * @return {boolean}
          */
-        areSameItem: function(currentItem, newItem, currentActivationData, newActivationData) {
+        areSameItem: function (currentItem, newItem, currentActivationData, newActivationData) {
             return currentItem == newItem;
         },
         /**
@@ -604,7 +546,7 @@ define(['durandal/system', 'knockout'], function (system, ko) {
          * @method beforeActivate
          * @param {object} newItem
          */
-        beforeActivate: function(newItem) {
+        beforeActivate: function (newItem) {
             return newItem;
         },
         /**
@@ -614,16 +556,15 @@ define(['durandal/system', 'knockout'], function (system, ko) {
          * @param {boolean} close Whether or not the previous item was closed.
          * @param {function} setter The activate item setter function.
          */
-        afterDeactivate: function(oldItem, close, setter) {
-            if(close && setter) {
+        afterDeactivate: function (oldItem, close, setter) {
+            if (close && setter) {
                 setter(null);
             }
         },
-        findChildActivator: function(item){
+        findChildActivator: function (item) {
             return null;
         }
     };
-
     /**
      * @class ActivatorModule
      * @static
@@ -648,10 +589,11 @@ define(['durandal/system', 'knockout'], function (system, ko) {
          * @param {object} object Any object you wish to verify as an activator or not.
          * @return {boolean} True if the object is an activator; false otherwise.
          */
-        isActivator:function(object){
+        isActivator: function (object) {
             return object && object.__activator__;
         }
     };
-
     return activator;
 });
+//# sourceMappingURL=activator.js.map 
+//# sourceMappingURL=activator.js.map

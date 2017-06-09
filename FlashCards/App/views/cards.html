@@ -1,0 +1,15 @@
+﻿<div>
+    <br />
+    <br />
+    <br />
+    <div data-bind="visible: selected.found === true">
+        <div>
+            <span class="selectedName" data-bind="text:selected.name"></span>
+        </div>
+    </div>
+
+    <div data-bind="visible: selected.found === false">
+        <h2>Card not found</h2>
+    </div>
+
+</div>
