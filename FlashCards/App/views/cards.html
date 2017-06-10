@@ -6,6 +6,7 @@
         <div>
             <span class="selectedName" data-bind="text:selected.name"></span>
         </div>
+        <div class="row" data-bind="router: {transition: 'entrance'}"></div>
     </div>
 
     <div data-bind="visible: selected.found === false">

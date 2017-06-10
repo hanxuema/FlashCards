@@ -16,7 +16,7 @@
             router.map([
                 { route: 'about', title: 'About', moduleId: 'viewmodels/about', nav: true },
                 { route: ['','catalog'], title: 'Catalog', moduleId: 'viewmodels/catalog', nav: true },      
-                { route: 'cards/:name', hash:'#cards', title: 'Cards', moduleId: 'viewmodels/cards', nav: false },
+                { route: 'cards/:param1*details', hash:'#cards', title: 'Cards', moduleId: 'viewmodels/cards', nav: false },
             ]).buildNavigationModel();
 
             //router.mapUnknownRoutes('viewmodels/catalog', '#catalog');

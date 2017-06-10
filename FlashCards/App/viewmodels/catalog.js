@@ -15,7 +15,7 @@
 
     vm.goToCards = function (name) {
         system.log("Go to " + name);
-        router.navigate("#cards/" + encodeURIComponent(name));
+        router.navigate("#cards/" + encodeURIComponent(name) +'/id/0');
     };
 
     return vm;
