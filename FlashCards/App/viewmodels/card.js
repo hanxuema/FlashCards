@@ -1,4 +1,4 @@
-﻿define(['modules/selectedCards'], function (selectedCards) {
+﻿define(['models/selectedCards'], function (selectedCards) {
 
     var vm = {};
     vm.indexParam = 0;
@@ -6,7 +6,15 @@
 
     vm.activate = function (name, index) {
         vm.indexParam = index;
-        selectedCards.setIndex(index);
+        //selectedCards.setIndex(index);
+    }
+
+    vm.attached = function () {
+        selectedCards.setIndex(vm.indexParam);
+    }
+
+    vm.flip = function () {
+        $(".card").toggleClass('flip');
     }
 
     return vm;
